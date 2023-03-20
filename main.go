@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+	"fmt"
 	"os"
 
 	"github.com/labstack/echo/v4"
@@ -12,7 +14,7 @@ type Request struct {
 	B int `query:"B"`
 }
 
-func main() {
+func main2() {
 	// Init
 	e := echo.New()
 	// Config print log
@@ -23,8 +25,25 @@ func main() {
 	e.Use(logger)
 	// Khai bao route den ham xu ly
 	e.GET("/print", PrintABC)
+	e.GET("/login", Login)
+	e.GET("/test/:idid/test", Test)
 	// Start webservice
 	e.Start("0.0.0.0:8910")
+}
+
+type Request3 struct {
+	ID int `param:"idid"`
+}
+
+func Test(c echo.Context) error {
+	var r Request3
+	err := c.Bind(&r)
+	if err != nil {
+		return c.JSON(400, "loi loi")
+	}
+	fmt.Println(r.ID)
+
+	return c.JSON(200, "OK")
 }
 
 func PrintABC(c echo.Context) error {
@@ -44,6 +63,42 @@ func PrintABC(c echo.Context) error {
 	// 	// Allow
 	// 	return c.JSON(200, "OK")
 	// }
+}
+
+type Request2 struct {
+	Username string `query:"username"`
+	Password string `query:"password"`
+}
+
+func Login(c echo.Context) error {
+	// Buoc 1: Binding vao struct & verify
+	r, err := verifyLogin(c)
+	if err != nil {
+		return c.JSON(400, err.Error())
+	}
+	// Xu ly
+	if r.Username == "longlong" && r.Password == "chienchienchien" {
+		return c.JSON(200, "Dang nhap thanh cong")
+	}
+
+	return c.JSON(401, "Dang nhap that bai")
+}
+
+func verifyLogin(c echo.Context) (Request2, error) {
+	var r Request2
+	err := c.Bind(&r)
+	if err != nil {
+		return Request2{}, err
+	}
+	if len(r.Username) < 6 {
+		return Request2{}, errors.New("username qua ngan")
+	}
+
+	if len(r.Password) < 8 {
+		return Request2{}, errors.New("password qua ngan")
+	}
+
+	return r, nil
 }
 
 // Bai tap: Viet 1 API dang nhap.
